@@ -18,6 +18,7 @@ import webapp2
 import cgi
 import datetime
 import jinja2
+
 import os
 import json
 
@@ -36,26 +37,7 @@ class Supplier(db.Expando):
 	measurementS = db.StringListProperty()
 	measurementM = db.StringListProperty()
 
-class MainPage(webapp2.RequestHandler):
-	def get(self):
-		user = users.get_current_user()
-		if user:
-			urllink = users.create_logout_url(self.request.uri)
-			linktext = 'Logout'
-		else:
-			urllink = users.create_login_url(self.request.uri)
-			linktext = 'Login'
 
-		suppliers = Supplier.all()
-		template_values = {'suppliers':suppliers,
-												'user':user,
-												'urllink':urllink,
-												'linktext':linktext,
-												'isadmin':users.is_current_user_admin()
-											}
-	
-		template = JINJA_ENVIRONMENT.get_template('index.html')
-		self.response.write(template.render(template_values))
 
 class Add(webapp2.RequestHandler):
 	def post(self):
@@ -68,6 +50,34 @@ class Add(webapp2.RequestHandler):
 		new_supplier.put()
 		
 		self.redirect("/")
+class Welcome(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			self.redirect("/main")
+		template_values={'urllink':users.create_login_url(self.request.uri)}
+		template = JINJA_ENVIRONMENT.get_template('welcome.html')
+		self.response.write(template.render(template_values))
+class MainPage(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			url_link = users.create_logout_url(self.request.uri)
+			linktext = 'Logout'
+		else:
+			url_link = users.create_login_url(self.request.uri)
+			linktext = 'Login'
+			self.redirect("/")
+		suppliers = Supplier.all()
+		template_values = {'suppliers':suppliers,
+			'user':user,
+			'urllink':url_link,
+				'linktext':linktext,
+					'isadmin':users.is_current_user_admin()
+					}
+
+		template = JINJA_ENVIRONMENT.get_template('index.html')
+		self.response.write(template.render(template_values))
 class CheckSize(webapp2.RequestHandler):
 	def post(self):
 #check small
@@ -91,7 +101,8 @@ class CheckSize(webapp2.RequestHandler):
 				self.response.write("L")
 
 app = webapp2.WSGIApplication([
-    ('/', MainPage),
+		('/',Welcome),
+    ('/main', MainPage),
 		('/addMeasurement',Add),
 		('/checkSize',CheckSize)
 														

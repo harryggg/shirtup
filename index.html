@@ -2,6 +2,7 @@
 	<head>
 	</head>
 	<body>
+		{% if isadmin %}
 		<form action="/addMeasurement" method="post">
 			supplier name:<input type="text" name = "supplier" />
 			S
@@ -22,7 +23,7 @@
 			<br />
             <div><input type="submit" value="add"></div>
     	</form><br/>
-    	{% if isadmin %}
+    	{% endif %}
     	<form action="/checkSize" method="post">
     	check size:<br />
     	supplier:<select name="name">
@@ -38,7 +39,7 @@
     	<div><input type="submit" value="checkSize"></div>
 
     	</form><br />
-    	{% endif %}
+    	
     	<a href="{{ urllink|safe }}">{{ linktext }}</a>
 	</body>
 </html>
