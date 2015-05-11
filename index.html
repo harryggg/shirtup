@@ -1,0 +1,44 @@
+<html>
+	<head>
+	</head>
+	<body>
+		<form action="/addMeasurement" method="post">
+			supplier name:<input type="text" name = "supplier" />
+			S
+			<br />
+			chest: <input type = "number" name = "Schest" />
+			<br />
+			shoulder: <input type = "number" name = "Sshoulder" />
+			<br />
+			length: <input type = "number" name = "Slength" />
+			<br />
+			M
+			<br />
+			chest: <input type = "number" name = "Mchest" />
+			<br />
+			shoulder: <input type = "number" name = "Mshoulder" />
+			<br />
+			length: <input type = "number" name = "Mlength" />
+			<br />
+            <div><input type="submit" value="add"></div>
+    	</form><br/>
+    	{% if isadmin %}
+    	<form action="/checkSize" method="post">
+    	check size:<br />
+    	supplier:<select name="name">
+  	
+  			{% for supplier in suppliers %}
+    		
+    			<option value="{{ supplier.name }}">{{ supplier.name }}</option>
+    		{% endfor %}
+    		</select><br />
+    	chest: <input type = "number" name = "chest" /> <br />
+    	shoulder:<input type = "number" name = "shoulder" /> <br />
+    	length:<input type = "number" name = "length" /> <br />
+    	<div><input type="submit" value="checkSize"></div>
+
+    	</form><br />
+    	{% endif %}
+    	<a href="{{ urllink|safe }}">{{ linktext }}</a>
+	</body>
+</html>
