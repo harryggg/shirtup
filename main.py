@@ -37,9 +37,67 @@ class Supplier(db.Expando):
 	measurementS = db.StringListProperty()
 	measurementM = db.StringListProperty()
 
+class User(db.Expando):
+	userid = db.StringProperty()
+	name = db.StringProperty()
+	email = db.EmailProperty()
+	chest = db.IntegerProperty()
+	shoulder = db.IntegerProperty()
+	length = db.IntegerProperty()
+
+class Sale(db.Expando):
+	name = db.StringProperty()
+	image = db.BlobProperty()
+	price = db.FloatProperty()
+	buyersList = db.StringListProperty()
+	supplier = db.ReferenceProperty(Supplier)
+	quantityList = db.StringListProperty()
+
+class AddSalePage(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			if users.is_current_user_admin():
+				template_values = {
+				}		
+				template = JINJA_ENVIRONMENT.get_template('addSales.html')
+				self.response.write(template.render(template_values))
+			else:
+				self.redirect("/main")
+		else:
+			self.redirect("/")
+
+class ListSalePage(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			if users.is_current_user_admin():
+				template_values = {
+				}		
+				template = JINJA_ENVIRONMENT.get_template('listSales.html')
+				self.response.write(template.render(template_values))
+			else:
+				self.redirect("/main")
+		else:
+			self.redirect("/")
+class AddNewSupplierPage(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			if users.is_current_user_admin():
+				template_values = {
+				}		
+				template = JINJA_ENVIRONMENT.get_template('addNewSupplier.html')
+				self.response.write(template.render(template_values))
+			else:
+				self.redirect("/main")
+		else:
+			self.redirect("/")
 
 
-class Add(webapp2.RequestHandler):
+
+
+class AddSupplier(webapp2.RequestHandler):
 	def post(self):
 		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
 		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
@@ -48,8 +106,43 @@ class Add(webapp2.RequestHandler):
 		new_supplier.measurementS = Slist
 		new_supplier.measurementM = Mlist
 		new_supplier.put()
+
 		
-		self.redirect("/")
+		self.redirect("/listSuppliers")
+
+class EditSupplier(webapp2.RequestHandler):
+	def post(self):
+		currentSupplier = db.get(self.request.get("key"))
+		
+
+		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
+		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
+		
+		currentSupplier.name = self.request.get("name")
+		currentSupplier.measurementS = Slist
+		currentSupplier.measurementM = Mlist
+		currentSupplier.put()
+		self.redirect("/listSuppliers")
+class DeleteSupplier(webapp2.RequestHandler):
+	def post(self):
+		db.delete(self.request.get("key"))
+		self.redirect("/listSuppliers")
+
+
+class ListSuppliersPage(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			
+			template_values = {
+					'suppliers':Supplier.all(),
+					'isadmin':users.is_current_user_admin()
+				}		
+			template = JINJA_ENVIRONMENT.get_template('listSuppliers.html')
+			self.response.write(template.render(template_values))
+			
+		else:
+			self.redirect("/")
 class Welcome(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
@@ -58,26 +151,63 @@ class Welcome(webapp2.RequestHandler):
 		template_values={'urllink':users.create_login_url(self.request.uri)}
 		template = JINJA_ENVIRONMENT.get_template('welcome.html')
 		self.response.write(template.render(template_values))
+
 class MainPage(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
 		if user:
 			url_link = users.create_logout_url(self.request.uri)
 			linktext = 'Logout'
-		else:
-			url_link = users.create_login_url(self.request.uri)
-			linktext = 'Login'
-			self.redirect("/")
-		suppliers = Supplier.all()
-		template_values = {'suppliers':suppliers,
-			'user':user,
-			'urllink':url_link,
+			currentUser = User.gql("WHERE userid = '%s'"%(user.user_id())).get()
+			if not currentUser: #firsttime
+				newUser = User()
+				newUser.userid = user.user_id()
+				newUser.name = user.nickname()
+				newUser.email = user.email()
+				newUser.put()
+				currentUser = User.gql("WHERE userid = '%s'"%(user.user_id())).get()
+			template_values = {
+				'user':currentUser,
+				'urllink':url_link,
 				'linktext':linktext,
 					'isadmin':users.is_current_user_admin()
 					}
+			template = JINJA_ENVIRONMENT.get_template('index.html')
+			self.response.write(template.render(template_values))
+		else:
+			self.redirect("/")
+			
+			
+	#suppliers = Supplier.all()
+		
 
-		template = JINJA_ENVIRONMENT.get_template('index.html')
+		
+
+class EditMeasurement(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if not user:
+			self.redirect(users.create_login_url(self.request.uri))
+		currentUser = User.gql("WHERE userid = '%s'"%(user.user_id())).get()
+		
+		template_values = {
+			'user':currentUser,
+
+		}
+		template = JINJA_ENVIRONMENT.get_template('measurement.html')
 		self.response.write(template.render(template_values))
+class UpdateMeasurement(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		if not user:
+			self.redirect(users.create_login_url(self.request.uri))
+		currentUser = User.gql("WHERE userid = '%s'"%(user.user_id())).get()
+		currentUser.chest = int(self.request.get("chest"))
+		currentUser.shoulder = int(self.request.get("shoulder"))
+		currentUser.length = int(self.request.get("length"))
+		currentUser.put()
+		self.redirect("/main")
+
 class CheckSize(webapp2.RequestHandler):
 	def post(self):
 #check small
@@ -94,16 +224,50 @@ class CheckSize(webapp2.RequestHandler):
 			for i in range(3):
 				if (int(supplier.measurementM[i])<int(self.request.get(measurementOrder[i]))):
 					isfit = False
-					break
+					breakussh
 			if isfit:
 				self.response.write("M")
 			else:
 				self.response.write("L")
 
+class AccountInfo(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if not user:
+			self.redirect(users.create_login_url(self.request.uri))
+		currentUser = User.gql("WHERE userid = '%s'"%(user.user_id())).get()
+		template_values = {
+			'user':currentUser,
+
+		}
+		template = JINJA_ENVIRONMENT.get_template('accountinfo.html')
+		self.response.write(template.render(template_values))
+
+class UpdateAccount(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		if not user:
+			self.redirect(users.create_login_url(self.request.uri))
+		currentUser = User.gql("WHERE userid = '%s'"%(user.user_id())).get()
+		currentUser.name = (self.request.get("name"))
+		currentUser.email = (self.request.get("email"))
+		currentUser.put()
+		self.redirect("/main")
+
 app = webapp2.WSGIApplication([
 		('/',Welcome),
     ('/main', MainPage),
-		('/addMeasurement',Add),
-		('/checkSize',CheckSize)
+		('/addSupplier',AddSupplier),
+		('/checkSize',CheckSize),
+		('/measurement',EditMeasurement),
+		('/updateMeasurement',UpdateMeasurement),
+		('/accountInfo',AccountInfo),
+		('/updateAccount',UpdateAccount),
+		('/editSupplier',EditSupplier),
+		('/addNewSupplier',AddNewSupplierPage),
+		('/listSuppliers',ListSuppliersPage),
+		('/deleteSupplier',DeleteSupplier),
+		('/Sells',ListSalePage),
+		('/addSalePage',AddSalePage)
 														
 ], debug=True)

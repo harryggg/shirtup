@@ -1,0 +1,52 @@
+<table border='1'>
+	<tr>
+    	<th rowspan="2">supplie name</th>
+    	<th colspan="3">Size S</th>
+    	<th colspan="3">Size M</th>
+    	{% if isadmin %}
+    	<th rowspan="2">update supplier</th>
+    	<th rowspan="2">delete supplier</th>
+    	{% endif %}
+  	</tr>
+  	<tr>
+  		<th>chest</th>
+  		<th>shoulder</th>
+  		<th>length</th>
+  		<th>chest</th>
+  		<th>shoulder</th>
+  		<th>length</th>
+  	</tr>
+{% for supplier in suppliers %}
+	<tr>
+		<form action="/editSupplier" method="post">
+		<td><input type="text" name="name" value="{{supplier.name}}" {% if not isadmin %}readonly{% endif %}/></td>
+		<td><input type="number" name="Schest" value="{{supplier.measurementS[0]}}" {% if not isadmin %}readonly{% endif %}/></td>
+		<td><input type="number" name="Sshoulder" value="{{supplier.measurementS[1]}}" {% if not isadmin %}readonly{% endif %}/></td>
+		<td><input type="number" name="Slength" value="{{supplier.measurementS[2]}}" {% if not isadmin %}readonly{% endif %}/></td>
+		<td><input type="number" name="Mchest" value="{{supplier.measurementM[0]}}" {% if not isadmin %}readonly{% endif %}/></td>
+		<td><input type="number" name="Mshoulder" value="{{supplier.measurementM[1]}}" {% if not isadmin %}readonly{% endif %}/></td>
+		<td><input type="number" name="Mlength" value="{{supplier.measurementM[2]}}" {% if not isadmin %}readonly{% endif %}/></td>
+
+		{% if isadmin %}
+		<td>
+			
+				<input type="hidden" name="key" value="{{supplier.key()}}" >
+				<input type="submit" value="update">
+			
+		</td>
+		</form>
+		<td>
+				<form action="/deleteSupplier" method="post">
+					<input type="hidden" name="key" value="{{supplier.key()}}" >
+					<input type="submit" value="delete">
+				</form>
+		</td>
+
+		{% endif %}
+	</tr>
+{% endfor %}
+</table>
+{% if isadmin %}
+<a href='/addNewSupplier'>add new supplier</a>
+{% endif %}
+<a href='/main'>back</a>
