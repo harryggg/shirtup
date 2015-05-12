@@ -46,9 +46,11 @@ class User(db.Expando):
 	length = db.IntegerProperty()
 
 class Sale(db.Expando):
+	sellerid = db.StringProperty(User)
 	name = db.StringProperty()
 	image = db.BlobProperty()
 	price = db.FloatProperty()
+	description = db.StringProperty()
 	buyersList = db.StringListProperty()
 	supplier = db.ReferenceProperty(Supplier)
 	quantityList = db.StringListProperty()
@@ -59,25 +61,42 @@ class AddSalePage(webapp2.RequestHandler):
 		if user:
 			if users.is_current_user_admin():
 				template_values = {
+					'suppliers':Supplier.all()
 				}		
-				template = JINJA_ENVIRONMENT.get_template('addSales.html')
+				template = JINJA_ENVIRONMENT.get_template('addSale.html')
 				self.response.write(template.render(template_values))
 			else:
 				self.redirect("/main")
 		else:
 			self.redirect("/")
-
+class AddSale(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		new_sale = Sale()
+		new_sale.sellerid = user.user_id()
+		new_sale.name = self.request.get("saleName")
+		new_sale.image = self.request.get("img")
+		new_sale.price = float(self.request.get("price"))
+		new_sale.description = self.request.get("description")
+		new_sale.supplier = db.get(self.request.get("supplier"))
+		new_sale.put()
+		self.redirect("/Sells")
 class ListSalePage(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
 		if user:
-			if users.is_current_user_admin():
-				template_values = {
-				}		
-				template = JINJA_ENVIRONMENT.get_template('listSales.html')
-				self.response.write(template.render(template_values))
-			else:
-				self.redirect("/main")
+			
+			sales = Sale.all()
+			sales.filter("sellerid = ",user.user_id())
+			template_values = {
+					'sales':sales
+				}
+			
+			#for sale in sales:
+			#	self.response.out.write(sale.image)
+			template = JINJA_ENVIRONMENT.get_template('listSales.html')
+			self.response.write(template.render(template_values))
+			
 		else:
 			self.redirect("/")
 class AddNewSupplierPage(webapp2.RequestHandler):
@@ -254,6 +273,13 @@ class UpdateAccount(webapp2.RequestHandler):
 		currentUser.put()
 		self.redirect("/main")
 
+class CheckSaleImage(webapp2.RequestHandler):
+	def post(self):
+		sale = db.get(self.request.get("key"))
+		self.response.headers['Content-Type'] = 'image/png'
+		self.response.out.write(sale.image)
+
+
 app = webapp2.WSGIApplication([
 		('/',Welcome),
     ('/main', MainPage),
@@ -268,6 +294,8 @@ app = webapp2.WSGIApplication([
 		('/listSuppliers',ListSuppliersPage),
 		('/deleteSupplier',DeleteSupplier),
 		('/Sells',ListSalePage),
-		('/addSalePage',AddSalePage)
+		('/addSalePage',AddSalePage),
+		('/addSale',AddSale),
+		('/checkSaleImage',CheckSaleImage)
 														
 ], debug=True)

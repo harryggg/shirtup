@@ -1,0 +1,14 @@
+<form action="/addSale" method="post" enctype="multipart/form-data"S>
+			supplier:<select name="supplier">
+				{% for supplier in suppliers %}
+					<option value="{{supplier.key()}}">{{supplier.name}}</option>
+				{% endfor %}
+			</select>
+			<br />
+			sale name:<input type="text" name = "saleName" /><br />
+			price:<input type="text" name="price" /><br />
+			description:<input type="textarea"  name="description" /><br />
+			image:<input type="file" name="img"/><br />
+            <div><input type="submit" value="start selling!"></div>
+    	</form><br/>
+    	<a href="/main">back</a>

@@ -1,1 +1,28 @@
+<html>
+
+	<body>
+<table border='1'>
+	<tr>
+		<th>name</th>
+		<th>supplier</th>
+		<th>image</th>
+		<th>price</th>
+		<th>buy!buy!buy!</th>
+	<tr>
+	{% for sale in sales %}
+		<tr>
+			<th>{{sale.name}}</th>
+			<th>{{sale.supplier.name}}</th>
+			<th><form action="/checkSaleImage" method="post">
+					<input type="hidden" name="key" value="{{sale.key()}}" >
+					<input type="submit" value="view image">
+				</form>
+			</th>
+			<th>{{sale.price}}</th>
+			<th>buy</th>
+		</tr>
+	{% endfor %}
+</table>
 <a href="/addSalePage">start a new sale</a>
+</body>
+</html>

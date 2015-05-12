@@ -1,0 +1,17 @@
+<html>
+	<head>
+	</head>
+	<body>
+		{% if user %}
+			hello,{{user.name}}<br />
+    		<a href="/measurement">edit measurement </a><br />
+    		<a href="/accountInfo">edit account information</a><br />
+    		<a href="/listSuppliers">suppliers</a><br />
+    		<a href="/Sells">manage/add sells</a><br />
+    	{% endif %}
+		
+
+    	
+    	<a href="{{ urllink|safe }}">{{ linktext }}</a>
+	</body>
+</html>
