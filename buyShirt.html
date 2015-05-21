@@ -1,0 +1,14 @@
+sale name:{{sale.name}}
+
+<form method="post" action="/updateBuy">
+	<input type="hidden" name="key" value="{{sale.key()}}" />
+	<select name = "size">
+		<option value="S">S</option>
+		<option value="M">M</option>
+		<option value="L">L</option>
+		<option value="XL">XL</option>
+	</select>
+	recommendation
+	quantity: <input type="number" name="quantity"  />
+	<input type="submit" value="buy">
+</form>

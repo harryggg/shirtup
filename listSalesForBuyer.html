@@ -7,8 +7,7 @@
 		<th>supplier</th>
 		<th>image</th>
 		<th>price</th>
-		<th>buyer list</th>
-		<th>stop selling!</th>
+		<th>buy buy buy!</th>
 	<tr>
 	{% for sale in sales %}
 		<tr>
@@ -20,15 +19,14 @@
 				</form>
 			</th>
 			<th>{{sale.price}}</th>
-			<th><form action="/checkBuyers" method="post">
-					<input type="hidden" name="key" value="{{sale.key()}}" >
-					<input type="submit" value="buyer list">
-				</form></th>
-			<th>stop selling</th>
-		</tr>
+			<th><form action="/buyShirt" method="post">
+				<input type="hidden" name="key" value="{{sale.key()}}">
+				<input type="submit" value="buy buy buy">
+				</form>
+			</th>
+			
 	{% endfor %}
 </table>
-<a href="/addSalePage">start a new sale</a>
-<a href="/main">Back</a>
+
 </body>
 </html>

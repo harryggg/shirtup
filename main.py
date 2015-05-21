@@ -52,6 +52,7 @@ class Sale(db.Expando):
 	price = db.FloatProperty()
 	description = db.StringProperty()
 	buyersList = db.StringListProperty()
+	sizeList = db.StringListProperty()
 	supplier = db.ReferenceProperty(Supplier)
 	quantityList = db.StringListProperty()
 
@@ -59,14 +60,13 @@ class AddSalePage(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
 		if user:
-			if users.is_current_user_admin():
-				template_values = {
+			
+			template_values = {
 					'suppliers':Supplier.all()
-				}		
-				template = JINJA_ENVIRONMENT.get_template('addSale.html')
-				self.response.write(template.render(template_values))
-			else:
-				self.redirect("/main")
+			}		
+			template = JINJA_ENVIRONMENT.get_template('addSale.html')
+			self.response.write(template.render(template_values))
+			
 		else:
 			self.redirect("/")
 class AddSale(webapp2.RequestHandler):
@@ -279,6 +279,75 @@ class CheckSaleImage(webapp2.RequestHandler):
 		self.response.headers['Content-Type'] = 'image/png'
 		self.response.out.write(sale.image)
 
+class ListSaleForBuyer(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			
+			sales = Sale.all()
+			template_values = {
+					'sales':sales
+				}
+			
+			#for sale in sales:
+			#	self.response.out.write(sale.image)
+			template = JINJA_ENVIRONMENT.get_template('listSalesForBuyer.html')
+			self.response.write(template.render(template_values))
+			
+		else:
+			self.redirect("/") 
+class BuyShirt(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		if user:
+			sale = db.get(self.request.get("key"))
+			template_values = {
+					'sale':sale
+				}
+			
+			
+			template = JINJA_ENVIRONMENT.get_template('buyShirt.html')
+			self.response.write(template.render(template_values))
+		else:
+			self.redirect("/")
+
+class UpdateBuy(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		if user:
+			sale = db.get(self.request.get("key"))
+			sale.buyersList.append(user.user_id())
+			sale.quantityList.append(self.request.get("quantity"))
+			sale.sizeList.append(self.request.get("size"))
+			sale.put()
+			self.redirect("/Buys")
+		else:
+			self.redirect("/")
+
+class ListBuyersPage(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		if user:
+			sale = db.get(self.request.get("key"))
+			emailList = []
+			nameList = []
+			for i in range(len(sale.buyersList)):
+				temp_user = User.gql("WHERE userid = '%s'"%(sale.buyersList[i])).get()
+				emailList.append(temp_user.email)
+				nameList.append(temp_user.name)
+
+			template_values = {
+					'sale':sale,
+					'emailList':emailList,
+					'nameList':nameList
+
+				}
+			
+			
+			template = JINJA_ENVIRONMENT.get_template('buyersList.html')
+			self.response.write(template.render(template_values))
+		else:
+			self.redirect("/")				
 
 app = webapp2.WSGIApplication([
 		('/',Welcome),
@@ -296,6 +365,10 @@ app = webapp2.WSGIApplication([
 		('/Sells',ListSalePage),
 		('/addSalePage',AddSalePage),
 		('/addSale',AddSale),
-		('/checkSaleImage',CheckSaleImage)
+		('/checkSaleImage',CheckSaleImage),
+		('/Buys',ListSaleForBuyer),
+		('/buyShirt',BuyShirt),
+		('/updateBuy',UpdateBuy),
+		('/checkBuyers',ListBuyersPage)
 														
 ], debug=True)
