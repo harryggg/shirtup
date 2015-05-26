@@ -27,15 +27,16 @@ import google.appengine.ext.db
 from google.appengine.api import users
 
 JINJA_ENVIRONMENT = jinja2.Environment(
-																			 loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
-																			 extensions=['jinja2.ext.autoescape'],
-																			 autoescape=True)
+		loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
+		extensions=['jinja2.ext.autoescape'],
+		autoescape=True)
 measurementOrder = ["chest","shoulder","length"]
+sizeOrder = ["XS","S","M","L","XL"]
 
 class Supplier(db.Expando):
 	name = db.StringProperty()
-	measurementS = db.StringListProperty()
-	measurementM = db.StringListProperty()
+	measurementList = db.StringListProperty() #xs,s,m,l,xl
+	
 
 class User(db.Expando):
 	userid = db.StringProperty()
@@ -118,12 +119,15 @@ class AddNewSupplierPage(webapp2.RequestHandler):
 
 class AddSupplier(webapp2.RequestHandler):
 	def post(self):
+		XSlist = [self.request.get("XSchest"),self.request.get("XSshoulder"),self.request.get("XSlength")]
 		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
 		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
+		Llist = [self.request.get("Lchest"),self.request.get("Lshoulder"),self.request.get("Llength")]
+		XLlist = [self.request.get("XLchest"),self.request.get("XLshoulder"),self.request.get("XLlength")]
 		new_supplier = Supplier()
 		new_supplier.name = self.request.get("supplier")
-		new_supplier.measurementS = Slist
-		new_supplier.measurementM = Mlist
+		new_supplier.measurementList = XSlist+Slist+Mlist+Llist+XLlist
+		
 		new_supplier.put()
 
 		
@@ -133,13 +137,14 @@ class EditSupplier(webapp2.RequestHandler):
 	def post(self):
 		currentSupplier = db.get(self.request.get("key"))
 		
-
+		XSlist = [self.request.get("XSchest"),self.request.get("XSshoulder"),self.request.get("XSlength")]
 		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
 		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
-		
+		Llist = [self.request.get("Lchest"),self.request.get("Lshoulder"),self.request.get("Llength")]
+		XLlist = [self.request.get("XLchest"),self.request.get("XLshoulder"),self.request.get("XLlength")]
 		currentSupplier.name = self.request.get("name")
-		currentSupplier.measurementS = Slist
-		currentSupplier.measurementM = Mlist
+		currentSupplier.measurementList = XSlist+Slist+Mlist+Llist+XLlist
+		
 		currentSupplier.put()
 		self.redirect("/listSuppliers")
 class DeleteSupplier(webapp2.RequestHandler):
@@ -301,8 +306,32 @@ class BuyShirt(webapp2.RequestHandler):
 		user = users.get_current_user()
 		if user:
 			sale = db.get(self.request.get("key"))
+			currentUser = User.gql("WHERE userid = '%s'"%(user.user_id())).get()
+			found = False
+			for i in range(5):
+				if sale.supplier.measurementList[i*3]:
+					chest = int(sale.supplier.measurementList[i*3])
+				else:
+					chest = 0
+				if sale.supplier.measurementList[i*3+1]:
+					shoulder = int(sale.supplier.measurementList[i*3+1])
+				else:
+					shoulder = 0
+				if sale.supplier.measurementList[i*3+2]:
+					length = int(sale.supplier.measurementList[i*3+2])
+				else:
+					length = 0
+				if chest>currentUser.chest and shoulder>currentUser.shoulder and length>currentUser.length:
+					found = True
+					break
+			if found:
+				recommendation = sizeOrder[i]
+			else:
+				recommendation = "Cannot find suitable size.."
 			template_values = {
-					'sale':sale
+					'sale':sale,
+					'sizeOrder':sizeOrder,
+					'recommendation':recommendation
 				}
 			
 			
