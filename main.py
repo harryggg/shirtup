@@ -33,11 +33,6 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 measurementOrder = ["chest","shoulder","length"]
 sizeOrder = ["XS","S","M","L","XL"]
 
-class Supplier(db.Expando):
-	name = db.StringProperty()
-	measurementList = db.StringListProperty() #xs,s,m,l,xl
-	
-
 class User(db.Expando):
 	userid = db.StringProperty()
 	name = db.StringProperty()
@@ -54,8 +49,8 @@ class Sale(db.Expando):
 	description = db.StringProperty()
 	buyersList = db.StringListProperty()
 	sizeList = db.StringListProperty()
-	supplier = db.ReferenceProperty(Supplier)
 	quantityList = db.StringListProperty()
+	measurementList = db.StringListProperty() #xs,s,m,l,xl
 
 class AddSalePage(webapp2.RequestHandler):
 	def get(self):
@@ -79,7 +74,13 @@ class AddSale(webapp2.RequestHandler):
 		new_sale.image = self.request.get("img")
 		new_sale.price = float(self.request.get("price"))
 		new_sale.description = self.request.get("description")
-		new_sale.supplier = db.get(self.request.get("supplier"))
+		XSlist = [self.request.get("XSchest"),self.request.get("XSshoulder"),self.request.get("XSlength")]
+		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
+		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
+		Llist = [self.request.get("Lchest"),self.request.get("Lshoulder"),self.request.get("Llength")]
+		XLlist = [self.request.get("XLchest"),self.request.get("XLshoulder"),self.request.get("XLlength")]
+		new_sale.measurementList = XSlist+Slist+Mlist+Llist+XLlist
+
 		new_sale.put()
 		self.redirect("/Sells")
 class ListSalePage(webapp2.RequestHandler):
@@ -100,73 +101,39 @@ class ListSalePage(webapp2.RequestHandler):
 			
 		else:
 			self.redirect("/")
-class AddNewSupplierPage(webapp2.RequestHandler):
+
+class CheckMeasurementPage(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
 		if user:
-			if users.is_current_user_admin():
-				template_values = {
-				}		
-				template = JINJA_ENVIRONMENT.get_template('addNewSupplier.html')
-				self.response.write(template.render(template_values))
-			else:
-				self.redirect("/main")
-		else:
-			self.redirect("/")
-
-
-
-
-class AddSupplier(webapp2.RequestHandler):
-	def post(self):
-		XSlist = [self.request.get("XSchest"),self.request.get("XSshoulder"),self.request.get("XSlength")]
-		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
-		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
-		Llist = [self.request.get("Lchest"),self.request.get("Lshoulder"),self.request.get("Llength")]
-		XLlist = [self.request.get("XLchest"),self.request.get("XLshoulder"),self.request.get("XLlength")]
-		new_supplier = Supplier()
-		new_supplier.name = self.request.get("supplier")
-		new_supplier.measurementList = XSlist+Slist+Mlist+Llist+XLlist
-		
-		new_supplier.put()
-
-		
-		self.redirect("/listSuppliers")
-
-class EditSupplier(webapp2.RequestHandler):
-	def post(self):
-		currentSupplier = db.get(self.request.get("key"))
-		
-		XSlist = [self.request.get("XSchest"),self.request.get("XSshoulder"),self.request.get("XSlength")]
-		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
-		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
-		Llist = [self.request.get("Lchest"),self.request.get("Lshoulder"),self.request.get("Llength")]
-		XLlist = [self.request.get("XLchest"),self.request.get("XLshoulder"),self.request.get("XLlength")]
-		currentSupplier.name = self.request.get("name")
-		currentSupplier.measurementList = XSlist+Slist+Mlist+Llist+XLlist
-		
-		currentSupplier.put()
-		self.redirect("/listSuppliers")
-class DeleteSupplier(webapp2.RequestHandler):
-	def post(self):
-		db.delete(self.request.get("key"))
-		self.redirect("/listSuppliers")
-
-
-class ListSuppliersPage(webapp2.RequestHandler):
-	def get(self):
-		user = users.get_current_user()
-		if user:
-			
+			sale = db.get(self.request.get("key"))
+			measurement = sale.measurementList
 			template_values = {
-					'suppliers':Supplier.all(),
-					'isadmin':users.is_current_user_admin()
-				}		
-			template = JINJA_ENVIRONMENT.get_template('listSuppliers.html')
+					'measurement':measurement,
+					'key':self.request.get("key"),
+					'canEdit':user.user_id() == sale.sellerid
+				}
+			
+			#for sale in sales:
+			#	self.response.out.write(sale.image)
+			template = JINJA_ENVIRONMENT.get_template('checkMeasurement.html')
 			self.response.write(template.render(template_values))
 			
 		else:
 			self.redirect("/")
+
+class EditSaleMeasurement(webapp2.RequestHandler):
+	def post(self):
+		sale = db.get(self.request.get("key"))
+		XSlist = [self.request.get("XSchest"),self.request.get("XSshoulder"),self.request.get("XSlength")]
+		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
+		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
+		Llist = [self.request.get("Lchest"),self.request.get("Lshoulder"),self.request.get("Llength")]
+		XLlist = [self.request.get("XLchest"),self.request.get("XLshoulder"),self.request.get("XLlength")]
+		sale.measurementList = XSlist+Slist+Mlist+Llist+XLlist
+		sale.put()
+		self.redirect("/Sells")
+
 class Welcome(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
@@ -309,16 +276,16 @@ class BuyShirt(webapp2.RequestHandler):
 			currentUser = User.gql("WHERE userid = '%s'"%(user.user_id())).get()
 			found = False
 			for i in range(5):
-				if sale.supplier.measurementList[i*3]:
-					chest = int(sale.supplier.measurementList[i*3])
+				if sale.measurementList[i*3]:
+					chest = int(sale.measurementList[i*3])
 				else:
 					chest = 0
-				if sale.supplier.measurementList[i*3+1]:
-					shoulder = int(sale.supplier.measurementList[i*3+1])
+				if sale.measurementList[i*3+1]:
+					shoulder = int(sale.measurementList[i*3+1])
 				else:
 					shoulder = 0
-				if sale.supplier.measurementList[i*3+2]:
-					length = int(sale.supplier.measurementList[i*3+2])
+				if sale.measurementList[i*3+2]:
+					length = int(sale.measurementList[i*3+2])
 				else:
 					length = 0
 				if chest>currentUser.chest and shoulder>currentUser.shoulder and length>currentUser.length:
@@ -381,16 +348,12 @@ class ListBuyersPage(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([
 		('/',Welcome),
     ('/main', MainPage),
-		('/addSupplier',AddSupplier),
+    	('/checkMeasurement',CheckMeasurementPage),
 		('/checkSize',CheckSize),
 		('/measurement',EditMeasurement),
 		('/updateMeasurement',UpdateMeasurement),
 		('/accountInfo',AccountInfo),
 		('/updateAccount',UpdateAccount),
-		('/editSupplier',EditSupplier),
-		('/addNewSupplier',AddNewSupplierPage),
-		('/listSuppliers',ListSuppliersPage),
-		('/deleteSupplier',DeleteSupplier),
 		('/Sells',ListSalePage),
 		('/addSalePage',AddSalePage),
 		('/addSale',AddSale),
@@ -398,6 +361,7 @@ app = webapp2.WSGIApplication([
 		('/Buys',ListSaleForBuyer),
 		('/buyShirt',BuyShirt),
 		('/updateBuy',UpdateBuy),
-		('/checkBuyers',ListBuyersPage)
+		('/checkBuyers',ListBuyersPage),
+		('/editSaleMeasurement',EditSaleMeasurement)
 														
 ], debug=True)

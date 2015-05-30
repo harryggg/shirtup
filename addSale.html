@@ -1,14 +1,49 @@
 <form action="/addSale" method="post" enctype="multipart/form-data"S>
-			supplier:<select name="supplier">
-				{% for supplier in suppliers %}
-					<option value="{{supplier.key()}}">{{supplier.name}}</option>
-				{% endfor %}
-			</select>
-			<br />
 			sale name:<input type="text" name = "saleName" /><br />
 			price:<input type="text" name="price" /><br />
 			description:<input type="textarea"  name="description" /><br />
 			image:<input type="file" name="img"/><br />
+			XS
+			<br />
+			chest: <input type = "number" name = "XSchest" />
+			<br />
+			shoulder: <input type = "number" name = "XSshoulder" />
+			<br />
+			length: <input type = "number" name = "XSlength" />
+			<br />
+			<br/>
+			S
+			<br />
+			chest: <input type = "number" name = "Schest" />
+			<br />
+			shoulder: <input type = "number" name = "Sshoulder" />
+			<br />
+			length: <input type = "number" name = "Slength" />
+			<br />
+			M
+			<br />
+			chest: <input type = "number" name = "Mchest" />
+			<br />
+			shoulder: <input type = "number" name = "Mshoulder" />
+			<br />
+			length: <input type = "number" name = "Mlength" />
+			<br />
+			L
+			<br />
+			chest: <input type = "number" name = "Lchest" />
+			<br />
+			shoulder: <input type = "number" name = "Lshoulder" />
+			<br />
+			length: <input type = "number" name = "Llength" />
+			<br />
+			XL
+			<br />
+			chest: <input type = "number" name = "XLchest" />
+			<br />
+			shoulder: <input type = "number" name = "XLshoulder" />
+			<br />
+			length: <input type = "number" name = "XLlength" />
+			<br />
             <div><input type="submit" value="start selling!"></div>
     	</form><br/>
     	<a href="/main">back</a>

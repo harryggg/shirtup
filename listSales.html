@@ -13,7 +13,10 @@
 	{% for sale in sales %}
 		<tr>
 			<th>{{sale.name}}</th>
-			<th>{{sale.supplier.name}}</th>
+			<th><form action="/checkMeasurement" method="get">
+					<input type="hidden" name="key" value="{{sale.key()}}" >
+					<input type="submit" value="view details">
+				</form></th>
 			<th><form action="/checkSaleImage" method="post">
 					<input type="hidden" name="key" value="{{sale.key()}}" >
 					<input type="submit" value="view image">
