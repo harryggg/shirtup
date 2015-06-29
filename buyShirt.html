@@ -1,0 +1,13 @@
+sale name:{{sale.name}}
+
+<form method="post" action="/updateBuy">
+	<input type="hidden" name="key" value="{{sale.key()}}" />
+	<select name = "size">
+		{% for size in sizeOrder %}
+		<option value="{{size}}" {% if size==recommendation %}selected{% endif %}>{{size}}</option>
+		{% endfor %}
+	</select>
+	recommendation:{{recommendation}}<br/>
+	quantity: <input type="number" name="quantity"  /><br />
+	<input type="submit" value="buy">
+</form>

@@ -27,15 +27,11 @@ import google.appengine.ext.db
 from google.appengine.api import users
 
 JINJA_ENVIRONMENT = jinja2.Environment(
-																			 loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
-																			 extensions=['jinja2.ext.autoescape'],
-																			 autoescape=True)
+		loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
+		extensions=['jinja2.ext.autoescape'],
+		autoescape=True)
 measurementOrder = ["chest","shoulder","length"]
-
-class Supplier(db.Expando):
-	name = db.StringProperty()
-	measurementS = db.StringListProperty()
-	measurementM = db.StringListProperty()
+sizeOrder = ["XS","S","M","L","XL"]
 
 class User(db.Expando):
 	userid = db.StringProperty()
@@ -46,103 +42,98 @@ class User(db.Expando):
 	length = db.IntegerProperty()
 
 class Sale(db.Expando):
+	sellerid = db.StringProperty(User)
 	name = db.StringProperty()
 	image = db.BlobProperty()
 	price = db.FloatProperty()
+	description = db.StringProperty()
 	buyersList = db.StringListProperty()
-	supplier = db.ReferenceProperty(Supplier)
+	sizeList = db.StringListProperty()
 	quantityList = db.StringListProperty()
+	measurementList = db.StringListProperty() #xs,s,m,l,xl
 
 class AddSalePage(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
 		if user:
-			if users.is_current_user_admin():
-				template_values = {
-				}		
-				template = JINJA_ENVIRONMENT.get_template('addSales.html')
-				self.response.write(template.render(template_values))
-			else:
-				self.redirect("/main")
-		else:
-			self.redirect("/")
-
-class ListSalePage(webapp2.RequestHandler):
-	def get(self):
-		user = users.get_current_user()
-		if user:
-			if users.is_current_user_admin():
-				template_values = {
-				}		
-				template = JINJA_ENVIRONMENT.get_template('listSales.html')
-				self.response.write(template.render(template_values))
-			else:
-				self.redirect("/main")
-		else:
-			self.redirect("/")
-class AddNewSupplierPage(webapp2.RequestHandler):
-	def get(self):
-		user = users.get_current_user()
-		if user:
-			if users.is_current_user_admin():
-				template_values = {
-				}		
-				template = JINJA_ENVIRONMENT.get_template('addNewSupplier.html')
-				self.response.write(template.render(template_values))
-			else:
-				self.redirect("/main")
-		else:
-			self.redirect("/")
-
-
-
-
-class AddSupplier(webapp2.RequestHandler):
-	def post(self):
-		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
-		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
-		new_supplier = Supplier()
-		new_supplier.name = self.request.get("supplier")
-		new_supplier.measurementS = Slist
-		new_supplier.measurementM = Mlist
-		new_supplier.put()
-
-		
-		self.redirect("/listSuppliers")
-
-class EditSupplier(webapp2.RequestHandler):
-	def post(self):
-		currentSupplier = db.get(self.request.get("key"))
-		
-
-		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
-		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
-		
-		currentSupplier.name = self.request.get("name")
-		currentSupplier.measurementS = Slist
-		currentSupplier.measurementM = Mlist
-		currentSupplier.put()
-		self.redirect("/listSuppliers")
-class DeleteSupplier(webapp2.RequestHandler):
-	def post(self):
-		db.delete(self.request.get("key"))
-		self.redirect("/listSuppliers")
-
-
-class ListSuppliersPage(webapp2.RequestHandler):
-	def get(self):
-		user = users.get_current_user()
-		if user:
 			
 			template_values = {
-					'suppliers':Supplier.all(),
-					'isadmin':users.is_current_user_admin()
-				}		
-			template = JINJA_ENVIRONMENT.get_template('listSuppliers.html')
+					'suppliers':Supplier.all()
+			}		
+			template = JINJA_ENVIRONMENT.get_template('addSale.html')
 			self.response.write(template.render(template_values))
 			
 		else:
 			self.redirect("/")
+class AddSale(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		new_sale = Sale()
+		new_sale.sellerid = user.user_id()
+		new_sale.name = self.request.get("saleName")
+		new_sale.image = self.request.get("img")
+		new_sale.price = float(self.request.get("price"))
+		new_sale.description = self.request.get("description")
+		XSlist = [self.request.get("XSchest"),self.request.get("XSshoulder"),self.request.get("XSlength")]
+		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
+		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
+		Llist = [self.request.get("Lchest"),self.request.get("Lshoulder"),self.request.get("Llength")]
+		XLlist = [self.request.get("XLchest"),self.request.get("XLshoulder"),self.request.get("XLlength")]
+		new_sale.measurementList = XSlist+Slist+Mlist+Llist+XLlist
+
+		new_sale.put()
+		self.redirect("/Sells")
+class ListSalePage(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			
+			sales = Sale.all()
+			sales.filter("sellerid = ",user.user_id())
+			template_values = {
+					'sales':sales
+				}
+			
+			#for sale in sales:
+			#	self.response.out.write(sale.image)
+			template = JINJA_ENVIRONMENT.get_template('listSales.html')
+			self.response.write(template.render(template_values))
+			
+		else:
+			self.redirect("/")
+
+class CheckMeasurementPage(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			sale = db.get(self.request.get("key"))
+			measurement = sale.measurementList
+			template_values = {
+					'measurement':measurement,
+					'key':self.request.get("key"),
+					'canEdit':user.user_id() == sale.sellerid
+				}
+			
+			#for sale in sales:
+			#	self.response.out.write(sale.image)
+			template = JINJA_ENVIRONMENT.get_template('checkMeasurement.html')
+			self.response.write(template.render(template_values))
+			
+		else:
+			self.redirect("/")
+
+class EditSaleMeasurement(webapp2.RequestHandler):
+	def post(self):
+		sale = db.get(self.request.get("key"))
+		XSlist = [self.request.get("XSchest"),self.request.get("XSshoulder"),self.request.get("XSlength")]
+		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
+		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
+		Llist = [self.request.get("Lchest"),self.request.get("Lshoulder"),self.request.get("Llength")]
+		XLlist = [self.request.get("XLchest"),self.request.get("XLshoulder"),self.request.get("XLlength")]
+		sale.measurementList = XSlist+Slist+Mlist+Llist+XLlist
+		sale.put()
+		self.redirect("/Sells")
+
 class Welcome(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
@@ -254,20 +245,123 @@ class UpdateAccount(webapp2.RequestHandler):
 		currentUser.put()
 		self.redirect("/main")
 
+class CheckSaleImage(webapp2.RequestHandler):
+	def post(self):
+		sale = db.get(self.request.get("key"))
+		self.response.headers['Content-Type'] = 'image/png'
+		self.response.out.write(sale.image)
+
+class ListSaleForBuyer(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			
+			sales = Sale.all()
+			template_values = {
+					'sales':sales
+				}
+			
+			#for sale in sales:
+			#	self.response.out.write(sale.image)
+			template = JINJA_ENVIRONMENT.get_template('listSalesForBuyer.html')
+			self.response.write(template.render(template_values))
+			
+		else:
+			self.redirect("/") 
+class BuyShirt(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		if user:
+			sale = db.get(self.request.get("key"))
+			currentUser = User.gql("WHERE userid = '%s'"%(user.user_id())).get()
+			found = False
+			for i in range(5):
+				if sale.measurementList[i*3]:
+					chest = int(sale.measurementList[i*3])
+				else:
+					chest = 0
+				if sale.measurementList[i*3+1]:
+					shoulder = int(sale.measurementList[i*3+1])
+				else:
+					shoulder = 0
+				if sale.measurementList[i*3+2]:
+					length = int(sale.measurementList[i*3+2])
+				else:
+					length = 0
+				if chest>currentUser.chest and shoulder>currentUser.shoulder and length>currentUser.length:
+					found = True
+					break
+			if found:
+				recommendation = sizeOrder[i]
+			else:
+				recommendation = "Cannot find suitable size.."
+			template_values = {
+					'sale':sale,
+					'sizeOrder':sizeOrder,
+					'recommendation':recommendation
+				}
+			
+			
+			template = JINJA_ENVIRONMENT.get_template('buyShirt.html')
+			self.response.write(template.render(template_values))
+		else:
+			self.redirect("/")
+
+class UpdateBuy(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		if user:
+			sale = db.get(self.request.get("key"))
+			sale.buyersList.append(user.user_id())
+			sale.quantityList.append(self.request.get("quantity"))
+			sale.sizeList.append(self.request.get("size"))
+			sale.put()
+			self.redirect("/Buys")
+		else:
+			self.redirect("/")
+
+class ListBuyersPage(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		if user:
+			sale = db.get(self.request.get("key"))
+			emailList = []
+			nameList = []
+			for i in range(len(sale.buyersList)):
+				temp_user = User.gql("WHERE userid = '%s'"%(sale.buyersList[i])).get()
+				emailList.append(temp_user.email)
+				nameList.append(temp_user.name)
+
+			template_values = {
+					'sale':sale,
+					'emailList':emailList,
+					'nameList':nameList
+
+				}
+			
+			
+			template = JINJA_ENVIRONMENT.get_template('buyersList.html')
+			self.response.write(template.render(template_values))
+		else:
+			self.redirect("/")				
+
 app = webapp2.WSGIApplication([
 		('/',Welcome),
     ('/main', MainPage),
-		('/addSupplier',AddSupplier),
+    	('/checkMeasurement',CheckMeasurementPage),
 		('/checkSize',CheckSize),
 		('/measurement',EditMeasurement),
 		('/updateMeasurement',UpdateMeasurement),
 		('/accountInfo',AccountInfo),
 		('/updateAccount',UpdateAccount),
-		('/editSupplier',EditSupplier),
-		('/addNewSupplier',AddNewSupplierPage),
-		('/listSuppliers',ListSuppliersPage),
-		('/deleteSupplier',DeleteSupplier),
 		('/Sells',ListSalePage),
-		('/addSalePage',AddSalePage)
+		('/addSalePage',AddSalePage),
+		('/addSale',AddSale),
+		('/checkSaleImage',CheckSaleImage),
+		('/Buys',ListSaleForBuyer),
+		('/buyShirt',BuyShirt),
+		('/updateBuy',UpdateBuy),
+		('/checkBuyers',ListBuyersPage),
+		('/editSaleMeasurement',EditSaleMeasurement)
 														
 ], debug=True)
