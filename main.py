@@ -22,6 +22,8 @@ import jinja2
 import os
 import json
 
+from google.appengine.api import mail
+
 from google.appengine.ext import db
 import google.appengine.ext.db
 from google.appengine.api import users
@@ -32,6 +34,25 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 		autoescape=True)
 measurementOrder = ["chest","shoulder","length"]
 sizeOrder = ["XS","S","M","L","XL"]
+
+def sendEmail(receiverEmail):
+	sender = 'matanghao@hotmail.com'
+	receiver = receiverEmail
+	subject = 'python email test'
+	smtpserver = 'smtp.live.com'
+	username = 'matanghao@hotmail.com'
+	password = '199484ha'
+	msg = MIMEText('''</pre>
+	<h1>helloWorld</h1>
+	<pre>''','html','utf-8') 
+	msg['Subject'] = subject 
+	smtp = smtplib.SMTP('smtp.live.com:587')
+	smtp.ehlo()
+	smtp.starttls()
+	smtp.login(username, password)
+	smtp.sendmail(sender, receiver, msg.as_string())
+	smtp.quit()
+	print('done')
 
 class User(db.Expando):
 	userid = db.StringProperty()
@@ -58,7 +79,7 @@ class AddSalePage(webapp2.RequestHandler):
 		if user:
 			
 			template_values = {
-					'suppliers':Supplier.all()
+					
 			}		
 			template = JINJA_ENVIRONMENT.get_template('addSale.html')
 			self.response.write(template.render(template_values))
@@ -67,22 +88,25 @@ class AddSalePage(webapp2.RequestHandler):
 			self.redirect("/")
 class AddSale(webapp2.RequestHandler):
 	def post(self):
-		user = users.get_current_user()
-		new_sale = Sale()
-		new_sale.sellerid = user.user_id()
-		new_sale.name = self.request.get("saleName")
-		new_sale.image = self.request.get("img")
-		new_sale.price = float(self.request.get("price"))
-		new_sale.description = self.request.get("description")
-		XSlist = [self.request.get("XSchest"),self.request.get("XSshoulder"),self.request.get("XSlength")]
-		Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
-		Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
-		Llist = [self.request.get("Lchest"),self.request.get("Lshoulder"),self.request.get("Llength")]
-		XLlist = [self.request.get("XLchest"),self.request.get("XLshoulder"),self.request.get("XLlength")]
-		new_sale.measurementList = XSlist+Slist+Mlist+Llist+XLlist
+		try:
+			user = users.get_current_user()
+			new_sale = Sale()
+			new_sale.sellerid = user.user_id()
+			new_sale.name = self.request.get("saleName")
+			new_sale.image = self.request.get("img")
+			new_sale.price = float(self.request.get("price"))
+			new_sale.description = self.request.get("description")
+			XSlist = [self.request.get("XSchest"),self.request.get("XSshoulder"),self.request.get("XSlength")]
+			Slist = [self.request.get("Schest"),self.request.get("Sshoulder"),self.request.get("Slength")]
+			Mlist = [self.request.get("Mchest"),self.request.get("Mshoulder"),self.request.get("Mlength")]
+			Llist = [self.request.get("Lchest"),self.request.get("Lshoulder"),self.request.get("Llength")]
+			XLlist = [self.request.get("XLchest"),self.request.get("XLshoulder"),self.request.get("XLlength")]
+			new_sale.measurementList = XSlist+Slist+Mlist+Llist+XLlist
 
-		new_sale.put()
-		self.redirect("/Sells")
+			new_sale.put()
+			self.redirect("/Sells")
+		except:
+			self.response.write("something is wrong with your input.Please check.")
 class ListSalePage(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
@@ -269,7 +293,7 @@ class ListSaleForBuyer(webapp2.RequestHandler):
 		else:
 			self.redirect("/") 
 class BuyShirt(webapp2.RequestHandler):
-	def post(self):
+	def get(self):
 		user = users.get_current_user()
 		if user:
 			sale = db.get(self.request.get("key"))
@@ -327,15 +351,19 @@ class ListBuyersPage(webapp2.RequestHandler):
 			sale = db.get(self.request.get("key"))
 			emailList = []
 			nameList = []
+			sizeDic = {"XS":0,"S":0,"M":0,"L":0,"XL":0}
 			for i in range(len(sale.buyersList)):
 				temp_user = User.gql("WHERE userid = '%s'"%(sale.buyersList[i])).get()
 				emailList.append(temp_user.email)
 				nameList.append(temp_user.name)
+				sizeDic[sale.sizeList[i]] += 1
 
 			template_values = {
 					'sale':sale,
 					'emailList':emailList,
-					'nameList':nameList
+					'nameList':nameList,
+					'sizeDic':sizeDic,
+					'sizeOrder':sizeOrder
 
 				}
 			
@@ -343,7 +371,33 @@ class ListBuyersPage(webapp2.RequestHandler):
 			template = JINJA_ENVIRONMENT.get_template('buyersList.html')
 			self.response.write(template.render(template_values))
 		else:
-			self.redirect("/")				
+			self.redirect("/")	
+
+class EmailBuyers(webapp2.RequestHandler):
+	def post(self):
+		user = users.get_current_user()
+		if user:
+			sale = db.get(self.request.get("key"))
+			sellerName = User.gql("WHERE userid = '%s'"%(sale.sellerid)).get().name
+			numberOfEmail = 0
+			numberOfFails = 0
+			for i in range(len(sale.buyersList)):
+				userEmail = User.gql("WHERE userid = '%s'"%(sale.buyersList[i])).get().email
+				userName = User.gql("WHERE userid = '%s'"%(sale.buyersList[i])).get().name
+				if not mail.is_email_valid(userEmail):
+					numberOfFails+=1
+				else:
+					sender_address = "shirt-up Support <support@example.com>"
+					subject = "Your shirt is ready for collection"
+					body = """
+						Hi,%s:
+							Your shirt is currently with %s.Please collect it soon.
+							Thank you for using shirt-up!"""%(userName,sellerName)
+
+					mail.send_mail(sender_address, userEmail, subject, body)
+					numberOfEmail+=1
+			self.response.write("%s emails sent. %s emails failed to send"%(numberOfEmail,numberOfFails))
+
 
 app = webapp2.WSGIApplication([
 		('/',Welcome),
@@ -362,6 +416,7 @@ app = webapp2.WSGIApplication([
 		('/buyShirt',BuyShirt),
 		('/updateBuy',UpdateBuy),
 		('/checkBuyers',ListBuyersPage),
-		('/editSaleMeasurement',EditSaleMeasurement)
+		('/editSaleMeasurement',EditSaleMeasurement),
+		('/emailBuyers',EmailBuyers)
 														
 ], debug=True)

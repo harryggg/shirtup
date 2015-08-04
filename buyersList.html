@@ -1,3 +1,18 @@
+Summary
+<table border='1'>
+	<tr>
+		{% for element in sizeOrder %}
+			<th>{{element}}</th>
+		{% endfor %}
+	</tr>
+	<tr>
+		{% for element in sizeOrder %}
+			<td>{{sizeDic[element]}}</td>
+		{% endfor %}
+	</tr>
+</table>
+<br>
+Buyers info
 <table border='1'>
 	<tr>
 		<th>buyer name</th>
@@ -7,10 +22,10 @@
 	<tr>
 	{% for i in range((sale.buyersList | length)) %}
 		<tr>
-			<th>{{nameList[i]}}</th>
-			<th>{{emailList[i]}}</th>
-			<th>{{sale.sizeList[i]}}</th>
-			<th>{{sale.quantityList[i]}}</th>
+			<td>{{nameList[i]}}</td>
+			<td>{{emailList[i]}}</td>
+			<td>{{sale.sizeList[i]}}</td>
+			<td>{{sale.quantityList[i]}}</td>
 			
 		</tr>
 	{% endfor %}

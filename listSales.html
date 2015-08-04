@@ -8,7 +8,7 @@
 		<th>image</th>
 		<th>price</th>
 		<th>buyer list</th>
-		<th>stop selling!</th>
+		<th>ready for collection!</th>
 	<tr>
 	{% for sale in sales %}
 		<tr>
@@ -27,7 +27,10 @@
 					<input type="hidden" name="key" value="{{sale.key()}}" >
 					<input type="submit" value="buyer list">
 				</form></th>
-			<th>stop selling</th>
+			<th><form action="/emailBuyers" method="post">
+					<input type="hidden" name="key" value="{{sale.key()}}" >
+					<input type="submit" value="buyer list">
+				</form></th>
 		</tr>
 	{% endfor %}
 </table>
