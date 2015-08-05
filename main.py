@@ -34,26 +34,6 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 		autoescape=True)
 measurementOrder = ["chest","shoulder","length"]
 sizeOrder = ["XS","S","M","L","XL"]
-
-def sendEmail(receiverEmail):
-	sender = 'matanghao@hotmail.com'
-	receiver = receiverEmail
-	subject = 'python email test'
-	smtpserver = 'smtp.live.com'
-	username = 'matanghao@hotmail.com'
-	password = '199484ha'
-	msg = MIMEText('''</pre>
-	<h1>helloWorld</h1>
-	<pre>''','html','utf-8') 
-	msg['Subject'] = subject 
-	smtp = smtplib.SMTP('smtp.live.com:587')
-	smtp.ehlo()
-	smtp.starttls()
-	smtp.login(username, password)
-	smtp.sendmail(sender, receiver, msg.as_string())
-	smtp.quit()
-	print('done')
-
 class User(db.Expando):
 	userid = db.StringProperty()
 	name = db.StringProperty()
@@ -106,7 +86,7 @@ class AddSale(webapp2.RequestHandler):
 			new_sale.put()
 			self.redirect("/Sells")
 		except:
-			self.response.write("something is wrong with your input.Please check.")
+			self.response.write("Something is wrong with your input.Please check.")
 class ListSalePage(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
@@ -356,7 +336,7 @@ class ListBuyersPage(webapp2.RequestHandler):
 				temp_user = User.gql("WHERE userid = '%s'"%(sale.buyersList[i])).get()
 				emailList.append(temp_user.email)
 				nameList.append(temp_user.name)
-				sizeDic[sale.sizeList[i]] += 1
+				sizeDic[sale.sizeList[i]] += int(sale.quantityList[i])
 
 			template_values = {
 					'sale':sale,
